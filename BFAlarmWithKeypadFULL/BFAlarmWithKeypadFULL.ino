@@ -2,13 +2,20 @@
 #include <LiquidCrystal_I2C.h>
 #include <NewTone.h>
 #include <Keypad.h>
+#include <virtuabotixRTC.h>
+#include "ClockSetter.h"
 #include "AlarmState.h"
 
 const int SOUND_PIN = 14;
 const int PIR_PIN = 10;
 const int BUZZ_PIN = 11;
 const int LED_YELLOW_PIN = 12;
-const int LED_GREEN_PIN = 15;
+//const int LED_GREEN_PIN = 15;
+
+const int pinCE = 17;
+const int pinIO = 16;
+const int pinSLK = 15;
+
 
 const byte numRows= 4; //number of rows on the keypad
 const byte numCols= 4; //number of columns on the keypad
@@ -47,11 +54,16 @@ MFAlarm alarm;
 bool displayOnLCD = false;
 bool playSounds = true;
 
+// time handling
+virtuabotixRTC myRTC(pinSLK, pinIO, pinCE);
+MFClockController clock(&myRTC);
+bool displayTime = true;
+
 // the setup routine runs once when you press reset:
 void setup() {                
   // initialize the digital pin as an output.
   pinMode(LED_YELLOW_PIN, OUTPUT);
-  pinMode(LED_GREEN_PIN, OUTPUT);
+  //pinMode(LED_GREEN_PIN, OUTPUT);
   pinMode(SOUND_PIN, INPUT);
 
   // initialize PIR pin mode to input
@@ -63,7 +75,7 @@ void setup() {
 
   // clear pins to turn-off the leds 
   digitalWrite(LED_YELLOW_PIN, LOW);
-  digitalWrite(LED_GREEN_PIN, LOW);
+  //digitalWrite(LED_GREEN_PIN, LOW);
   
   Serial.begin(9600);
   
@@ -153,10 +165,13 @@ void processKeypad() {
     if (playSounds) {
       NewTone(BUZZ_PIN, 2000, 100);
     }
+    
     if (keypressed == '*') {
       processPin();
     } else if (keypressed == 'A') {
       playSounds = !playSounds;
+    } else if (keypressed == 'D') {
+      displayTime = !displayTime;
     }
     else {
       addEntryToPin(keypressed);
@@ -216,6 +231,8 @@ void loop() {
   //  Serial.print("SOUND DETECTED\n");
   //}
 
+  myRTC.updateTime();
+
   alarm.iterate();
   
   if (alarm.isMoveDetected()) {
@@ -225,11 +242,73 @@ void loop() {
   }
 
   handleLCDDisplay();
+  
+  if (displayTime) {
+      // print time to LCD
+    lcd.setCursor(0,1);
+    lcd.print(myRTC.hours);
+    lcd.setCursor(2,1);
+    lcd.print(":");
+    lcd.setCursor(3,1);
+    lcd.print(myRTC.minutes);
+    lcd.setCursor(5,1);
+    lcd.print(":");
+    lcd.setCursor(6,1);
+    lcd.print(myRTC.seconds);
+  } else {
+    
+    
+    lcd.setCursor(0,1);
+    switch (myRTC.dayofweek)
+    {
+      case 1: 
+        lcd.print("PO");
+        break;
+      case 2:
+        lcd.print("WT");
+        break;
+      case 3: 
+        lcd.print("SR");
+        break;
+      case 4:
+        lcd.print("CZ");
+        break;
+      case 5: 
+        lcd.print("PI");
+        break;
+      case 6:
+        lcd.print("SO");
+        break;
+      case 7: 
+        lcd.print("NI");
+        break;
+      default:
+        lcd.print("??");
+        break;
+    }
+    lcd.print(myRTC.dayofweek);
+    lcd.setCursor(2,1);
+    lcd.print(" ");
+    
+    lcd.setCursor(3,1);
+    lcd.print(myRTC.year);
+    lcd.setCursor(7,1);
+    lcd.print("-");
+
+    lcd.setCursor(8,1);
+    lcd.print(myRTC.month);
+    lcd.setCursor(10,1);
+    lcd.print("-");
+
+    lcd.setCursor(11,1);
+    lcd.print(myRTC.dayofmonth);
+    
+  }
     
   if (alarm.getState() == ALARM) 
   {
     //digitalWrite(LED_GREEN_PIN, HIGH);
-    digitalWrite(LED_GREEN_PIN, highLastTime ? HIGH : LOW);
+    //digitalWrite(LED_GREEN_PIN, highLastTime ? HIGH : LOW);
     highLastTime = !highLastTime;
     if (playSounds) {
       NewTone(BUZZ_PIN, 4000, 20);
@@ -243,7 +322,7 @@ void loop() {
   } 
   else 
   {
-    digitalWrite(LED_GREEN_PIN, LOW);
+    //digitalWrite(LED_GREEN_PIN, LOW);
     //digitalWrite(LED_YELLOW_PIN, LOW);
   }
     
