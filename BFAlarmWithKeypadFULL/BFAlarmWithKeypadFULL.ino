@@ -159,14 +159,15 @@ void addEntryToPin(char keypressed) {
 void processKeypad() {
 
   char keypressed = myKeypad.getKey();
-      
+       
   if (keypressed != NO_KEY) {
     // if this is '#' compare PIN with PIN and enable/disable
     if (playSounds) {
       NewTone(BUZZ_PIN, 2000, 100);
     }
-    
-    if (keypressed == '*') {
+  
+    if (clock.handleKeypadEntry(keypressed)) {
+    } else if (keypressed == '*') {
       processPin();
     } else if (keypressed == 'A') {
       playSounds = !playSounds;
@@ -242,69 +243,12 @@ void loop() {
   }
 
   handleLCDDisplay();
-  
-  if (displayTime) {
-      // print time to LCD
-    lcd.setCursor(0,1);
-    lcd.print(myRTC.hours);
-    lcd.setCursor(2,1);
-    lcd.print(":");
-    lcd.setCursor(3,1);
-    lcd.print(myRTC.minutes);
-    lcd.setCursor(5,1);
-    lcd.print(":");
-    lcd.setCursor(6,1);
-    lcd.print(myRTC.seconds);
-  } else {
-    
-    
-    lcd.setCursor(0,1);
-    switch (myRTC.dayofweek)
-    {
-      case 1: 
-        lcd.print("PO");
-        break;
-      case 2:
-        lcd.print("WT");
-        break;
-      case 3: 
-        lcd.print("SR");
-        break;
-      case 4:
-        lcd.print("CZ");
-        break;
-      case 5: 
-        lcd.print("PI");
-        break;
-      case 6:
-        lcd.print("SO");
-        break;
-      case 7: 
-        lcd.print("NI");
-        break;
-      default:
-        lcd.print("??");
-        break;
-    }
-    lcd.print(myRTC.dayofweek);
-    lcd.setCursor(2,1);
-    lcd.print(" ");
-    
-    lcd.setCursor(3,1);
-    lcd.print(myRTC.year);
-    lcd.setCursor(7,1);
-    lcd.print("-");
 
-    lcd.setCursor(8,1);
-    lcd.print(myRTC.month);
-    lcd.setCursor(10,1);
-    lcd.print("-");
-
-    lcd.setCursor(11,1);
-    lcd.print(myRTC.dayofmonth);
-    
-  }
-    
+  String timeString;
+  clock.getDisplayString(timeString);
+  lcd.setCursor(0,1);
+  lcd.print(timeString);
+      
   if (alarm.getState() == ALARM) 
   {
     //digitalWrite(LED_GREEN_PIN, HIGH);

@@ -4,8 +4,8 @@
 #include <Arduino.h>
 #include <virtuabotixRTC.h>
 
-enum CLOCK_MODE { NONE, ENTER_TIME, ENTER_DATE };
-enum TIME_ELEMENTS { HOUR, MINUTE };
+enum CLOCK_MODE { NONE, ENTER };
+enum TIME_ELEMENTS { HOUR, MINUTE, SECOND };
 enum DATE_ELEMENTS { YEAR, MONTH, DAY };
 
 class MFClockController {
@@ -18,9 +18,19 @@ class MFClockController {
       this->blinkState = false;
       this->displayTime = true;
     }
-    void handleKeypadEntry(char entry);
+    bool handleKeypadEntry(char entry);
     void getDisplayString(String &displayString);
   
+  private:
+    void getTwoDigitsDisplayString(String &display, int value, bool isBlinking);    
+    void getFourDigitsDisplayString(String &display, int value, bool isBlinking);
+    int getCurrentEntryAsInt(int maxLength);
+    bool changeMode();
+    bool modifyDisplay();
+    bool handleCurrenyEntry(char entry, int maxLength, int maxValue);
+    bool isDigit(char entry);
+    void saveTime();
+    void setMode(CLOCK_MODE cmode, TIME_ELEMENTS tmode, DATE_ELEMENTS dmode, int curEntryValue);
   private:
     CLOCK_MODE mode;
     virtuabotixRTC *time_pointer;
@@ -28,6 +38,7 @@ class MFClockController {
     DATE_ELEMENTS dateElement;
     bool blinkState;
     bool displayTime;
+    String currentEntry;
     
     static const char MODIFY_MODE_CHAR = 'C';
     static const char MODIFY_DISPLAY_CHAR = 'D';
